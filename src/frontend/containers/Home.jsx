@@ -1,36 +1,36 @@
-import React from "react";
-import { connect } from "react-redux";
-import Header from "../components/Header";
-import Search from "../components/Search";
-import Categories from "../components/Categories";
-import Carousel from "../components/Carousel";
-import CarouselItem from "../components/CarouselItem";
-import "../assets/styles/App.scss";
+import React from 'react';
+import { connect } from 'react-redux';
+import Header from '../components/Header';
+import Search from '../components/Search';
+import Categories from '../components/Categories';
+import Carousel from '../components/Carousel';
+import CarouselItem from '../components/CarouselItem';
+import '../assets/styles/App.scss';
 
 const Home = ({ myList, trends, originals }) => {
   return (
     <>
       <Header />
-      <Search isHome/>
+      <Search isHome />
       {myList.length > 0 && (
-        <Categories title="Mi Lista">
+        <Categories title='Mi Lista'>
           <Carousel>
-            {myList.map((item) => (
+            {myList.map(item => (
               <CarouselItem key={item.id} {...item} isList />
             ))}
           </Carousel>
         </Categories>
       )}
-      <Categories title="Tendencias">
+      <Categories title='Tendencias'>
         <Carousel>
-          {trends.map((item) => (
+          {trends.map(item => (
             <CarouselItem key={item.id} {...item} />
           ))}
         </Carousel>
       </Categories>
-      <Categories title="Originales de Platzi Video">
+      <Categories title='Originales de Platzi Video'>
         <Carousel>
-          {originals.map((item) => (
+          {originals.map(item => (
             <CarouselItem key={item.id} {...item} />
           ))}
         </Carousel>

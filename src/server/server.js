@@ -1,30 +1,42 @@
-import express from "express";
-import devEnv from "dotenv";
-import webpack from "webpack";
+import express from 'express';
+import devEnv from 'dotenv';
+import webpack from 'webpack';
 
-import React from "react";
-import { renderToString } from "react-dom/server";
-import { Provider } from "react-redux";
-import { createStore } from "redux";
-import { renderRoutes } from "react-router-config";
-import { StaticRouter } from "react-router-dom";
-import serverRoutes from "../frontend/routes/serverRoutes";
-import reducer from "../frontend/reducers";
-import helmet from "helmet";
-import initialState from "../frontend/initialState";
-import getManifest from "./getManifest";
+import React from 'react';
+import { renderToString } from 'react-dom/server';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import { renderRoutes } from 'react-router-config';
+import { StaticRouter } from 'react-router-dom';
+import serverRoutes from '../frontend/routes/serverRoutes';
+import reducer from '../frontend/reducers';
+import helmet from 'helmet';
+import initialState from '../frontend/initialState';
+import getManifest from './getManifest';
+
+import cookieParser from 'cookie-parser';
+import boom from '@hapi/boom';
+import passport from 'passport';
+import axios from 'axios';
 
 devEnv.config();
 
-const { ENV, PORT } = process.env;
 const app = express();
+const { ENV, PORT } = process.env;
 
-if (ENV === "development") {
-  console.log("Development Config!");
+app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
+app.use(passport.session());
 
-  const webpackConfig = require("../../webpack.config");
-  const webpackDevMiddleware = require("webpack-dev-middleware");
-  const webpackHotMiddleware = require("webpack-hot-middleware");
+require('./utils/auth/strategies/basic');
+
+if (ENV === 'development') {
+  console.log('Development Config!');
+
+  const webpackConfig = require('../../webpack.config');
+  const webpackDevMiddleware = require('webpack-dev-middleware');
+  const webpackHotMiddleware = require('webpack-hot-middleware');
   const compiler = webpack(webpackConfig);
   // const serverConfig = { port: PORT, hot: true };
   const { publicPath } = webpackConfig.output;
@@ -42,13 +54,13 @@ if (ENV === "development") {
   app.use(express.static(`${__dirname}/public`));
   app.use(helmet());
   app.use(helmet.permittedCrossDomainPolicies());
-  app.disable("x-powered-by");
+  app.disable('x-powered-by');
 }
 
 const setResponse = (html, preloadedState, manifest) => {
-  const mainStyles = manifest ? manifest["main.css"] : "assets/app.css";
-  const mainBuild = manifest ? manifest["main.js"] : "assets/app.js";
-  const vendorBuild = manifest ? manifest["vendors.js"] : "assets/vendor.js";
+  const mainStyles = manifest ? manifest['main.css'] : 'assets/app.css';
+  const mainBuild = manifest ? manifest['main.js'] : 'assets/app.js';
+  const vendorBuild = manifest ? manifest['vendors.js'] : 'assets/vendor.js';
 
   return `
   <!DOCTYPE html>
@@ -62,7 +74,7 @@ const setResponse = (html, preloadedState, manifest) => {
       <script>
         window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(
           /</g,
-          "\\u003c"
+          '\\u003c'
         )}
       </script>
       <script src="${mainBuild}" type="text/javascript"></script>
@@ -84,13 +96,62 @@ const renderApp = (req, res) => {
   );
 
   res.set(
-    "Content-Security-Policy",
+    'Content-Security-Policy',
     "default-src *; style-src 'self' http://* 'unsafe-inline'; script-src 'self' http://* 'unsafe-inline' 'unsafe-eval'"
   );
   res.send(setResponse(html, preloadedState, req.hashManifest));
 };
 
-app.get("*", renderApp);
+app.post('/auth/sign-in', async function (req, res, next) {
+  // Obtenemos el atributo rememberMe desde el cuerpo del request
+  const { rememberMe } = req.body;
+
+  passport.authenticate('basic', function (error, data) {
+    try {
+      if (error || !data) {
+        next(boom.unauthorized());
+      }
+
+      req.login(data, { session: false }, async function (error) {
+        if (error) {
+          next(error);
+        }
+
+        const { token, ...user } = data;
+
+        // Si el atributo rememberMe es verdadero la expiración será en 30 dias
+        // de lo contrario la expiración será en 2 horas
+        res.cookie('token', token, {
+          httpOnly: !config.dev,
+          secure: !config.dev,
+          maxAge: rememberMe ? THIRTY_DAYS_IN_SEC : TWO_HOURS_IN_SEC,
+        });
+
+        res.status(200).json(user);
+      });
+    } catch (error) {
+      next(error);
+    }
+  })(req, res, next);
+});
+
+app.post('/auth/sign-up', async function (req, res, next) {
+  const { body: user } = req;
+
+  try {
+    await axios({
+      url: `${config.apiUrl}/api/auth/sign-up`,
+      method: 'post',
+      data: user,
+    });
+
+    res.status(201).json({ message: 'user created' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('*', renderApp);
 
 app.listen(PORT, (error) => {
   if (error) console.log(error);

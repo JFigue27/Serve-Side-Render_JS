@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import googleIcon from '../assets/static/google-icon.png';
 import twitterIcon from '../assets/static/twitter-icon.png';
 import '../assets/styles/components/Login.scss';
-import { loginRequest } from '../actions';
+import { loginUser } from '../actions';
 import Header from '../components/Header';
 
 const Login = (props) => {
@@ -23,8 +23,7 @@ const Login = (props) => {
   const handleSubmit = (event) => {
     event.preventDefault();
     // console.log(form);
-    props.loginRequest(form);
-    props.history.push('/');
+    props.loginUser(form, '/');
   };
   return (
     <>
@@ -47,7 +46,9 @@ const Login = (props) => {
               name='password'
               onChange={handleInput}
             />
-            <button className='button' type='button'>Iniciar sesión</button>
+            <button className='button' type='submit'>
+              Iniciar sesión
+            </button>
             <div className='login__container--remember-me'>
               <label htmlFor='cbox1'>
                 <input type='checkbox' id='cbox1' value='first_checkbox' />
@@ -60,17 +61,18 @@ const Login = (props) => {
             <div>
               <img src={googleIcon} alt='Google Icon' />
               {' '}
-              Inicia sesión con Google
+              Inicia sesión con
+              Google
             </div>
             <div>
               <img src={twitterIcon} alt='Twitter Icon' />
               {' '}
-              Inicia sesión con Twitter
+              Inicia sesión con
+              Twitter
             </div>
           </section>
           <p className='login__container--register'>
             No tienes ninguna cuenta
-            {' '}
             {' '}
             <Link to='/register'>Regístrate</Link>
           </p>
@@ -81,7 +83,7 @@ const Login = (props) => {
 };
 
 const mapDispatchToProps = {
-  loginRequest,
+  loginUser,
 };
 
 export default connect(null, mapDispatchToProps)(Login);

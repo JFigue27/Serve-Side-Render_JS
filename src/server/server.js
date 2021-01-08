@@ -112,9 +112,9 @@ app.post('/auth/sign-in', async function (req, res, next) {
         next(boom.unauthorized());
       }
 
-      req.login(data, { session: false }, async function (error) {
-        if (error) {
-          next(error);
+      req.login(data, { session: false }, async function (err) {
+        if (err) {
+          next(err);
         }
 
         const { token, ...user } = data;
@@ -122,15 +122,15 @@ app.post('/auth/sign-in', async function (req, res, next) {
         // Si el atributo rememberMe es verdadero la expiración será en 30 dias
         // de lo contrario la expiración será en 2 horas
         res.cookie('token', token, {
-          httpOnly: !config.dev,
-          secure: !config.dev,
-          maxAge: rememberMe ? THIRTY_DAYS_IN_SEC : TWO_HOURS_IN_SEC,
+          httpOnly: !process.env.ENV === 'development',
+          secure: !process.env.ENV === 'development',
+          // maxAge: rememberMe ? THIRTY_DAYS_IN_SEC : TWO_HOURS_IN_SEC,
         });
 
         res.status(200).json(user);
       });
-    } catch (error) {
-      next(error);
+    } catch (err) {
+      next(err);
     }
   })(req, res, next);
 });

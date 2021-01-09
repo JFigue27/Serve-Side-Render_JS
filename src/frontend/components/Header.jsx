@@ -12,7 +12,12 @@ const Header = (props) => {
   const { user, isLogin, isRegister } = props;
   const hasUser = Object.keys(user).length > 0;
   const handleLogout = () => {
+    document.cookie = 'email=';
+    document.cookie = 'name=';
+    document.cookie = 'id=';
+    document.cookie = 'token=';
     props.logoutRequest({});
+    window.location.href = '/login';
   };
 
   const headerClass = classNames('header', {
@@ -30,7 +35,7 @@ const Header = (props) => {
           {hasUser ? (
             <img src={gravatar(user.email)} alt={user.email} />
           ) : (
-            <img src={userIcon} alt='' />
+            <img src={userIcon} alt='User Icon' />
           )}
           <p>Perfil</p>
         </div>

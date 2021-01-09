@@ -11,7 +11,6 @@ import { StaticRouter } from 'react-router-dom';
 import serverRoutes from '../frontend/routes/serverRoutes';
 import reducer from '../frontend/reducers';
 import helmet from 'helmet';
-import initialState from '../frontend/initialState';
 import getManifest from './getManifest';
 
 import cookieParser from 'cookie-parser';
@@ -85,12 +84,35 @@ const setResponse = (html, preloadedState, manifest) => {
 };
 
 const renderApp = (req, res) => {
+  let initialState;
+  const { email, name, id } = req.cookies;
+  if (id) {
+    initialState = {
+      user: {
+        email,
+        name,
+        id,
+      },
+      myList: [],
+      trends: [],
+      originals: [],
+    };
+  } else {
+    initialState = {
+      user: {},
+      myList: [],
+      trends: [],
+      originals: [],
+    };
+  }
+
   const store = createStore(reducer, initialState);
   const preloadedState = store.getState();
+  const isLogged = initialState.user.id;
   const html = renderToString(
     <Provider store={store}>
       <StaticRouter location={req.url} context={{}}>
-        {renderRoutes(serverRoutes)}
+        {renderRoutes(serverRoutes(isLogged))}
       </StaticRouter>
     </Provider>
   );

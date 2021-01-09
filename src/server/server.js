@@ -83,10 +83,17 @@ const setResponse = (html, preloadedState, manifest) => {
   `;
 };
 
-const renderApp = (req, res) => {
+const renderApp = async (req, res) => {
   let initialState;
-  const { email, name, id } = req.cookies;
-  if (id) {
+  const { token, email, name, id } = req.cookies;
+
+  try {
+    let movieList = await axios({
+      url: `${process.env.API_URL}/api/movies`,
+      headers: { Authorization: `Bearer ${token}` },
+      method: 'get',
+    });
+    movieList = movieList.data.data;
     initialState = {
       user: {
         email,
@@ -94,10 +101,14 @@ const renderApp = (req, res) => {
         id,
       },
       myList: [],
-      trends: [],
-      originals: [],
+      trends: movieList.filter(
+        (movie) => movie.contentRaiting === 'PG' && movie._id
+      ),
+      originals: movieList.filter(
+        (movie) => movie.contentRaiting === 'G' && movie._id
+      ),
     };
-  } else {
+  } catch (error) {
     initialState = {
       user: {},
       myList: [],
@@ -144,8 +155,8 @@ app.post('/auth/sign-in', async function (req, res, next) {
         // Si el atributo rememberMe es verdadero la expiración será en 30 dias
         // de lo contrario la expiración será en 2 horas
         res.cookie('token', token, {
-          httpOnly: !process.env.ENV === 'development',
-          secure: !process.env.ENV === 'development',
+          httpOnly: !ENV === 'development',
+          secure: !ENV === 'development',
           // maxAge: rememberMe ? THIRTY_DAYS_IN_SEC : TWO_HOURS_IN_SEC,
         });
 

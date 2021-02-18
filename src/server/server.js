@@ -93,14 +93,23 @@ const renderApp = async (req, res) => {
       headers: { Authorization: `Bearer ${token}` },
       method: 'get',
     });
+
+    let movieUserList = await axios({
+      url: `${process.env.API_URL}/api/user-movies`,
+      headers: { Authorization: `Bearer ${token}` },
+      method: 'get',
+    });
+
     movieList = movieList.data.data;
+    movieUserList = movieUserList.data.data.filter((userMovie) => userMovie.userId === id);
+
     initialState = {
       user: {
         email,
         name,
         id,
       },
-      myList: [],
+      myList: movieList.filter((movie) => movieUserList.some((mu) => mu.movieId === movie._id)),
       trends: movieList.filter(
         (movie) => movie.contentRaiting === 'PG' && movie._id
       ),
@@ -116,7 +125,6 @@ const renderApp = async (req, res) => {
       originals: [],
     };
   }
-
   const store = createStore(reducer, initialState);
   const preloadedState = store.getState();
   const isLogged = initialState.user.id;
@@ -187,6 +195,36 @@ app.post('/auth/sign-up', async function (req, res, next) {
       email: req.body.email,
       id: userData.data.id,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/user-movies', async function (req, res, next) {
+  try {
+    // const { body: userMovie } = req;
+    const userMovie = {
+      movieId: req.body._id,
+      userId: req.cookies.id,
+    };
+    // console.log(`userId:  ${userId}`);
+    // console.log(`movieId:  ${movieId}`);
+
+    const { token } = req.cookies;
+    console.log(userMovie);
+
+    const { data, status } = await axios({
+      url: `${process.env.API_URL}/api/user-movies`,
+      headers: { Authorization: `Bearer ${token}` },
+      method: 'post',
+      data: userMovie,
+    });
+
+    if (status !== 201) {
+      return next(boom.badImplementation());
+    }
+
+    res.status(201).json(data);
   } catch (error) {
     next(error);
   }

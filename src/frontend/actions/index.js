@@ -30,6 +30,11 @@ export const getVideoSource = payload => ({
   payload,
 });
 
+export const setError = payload => ({
+  type: 'SET_ERROR',
+  payload,
+});
+
 export const registerUser = (payload, redirectUrl) => {
   return (dispatch) => {
     axios
@@ -60,6 +65,18 @@ export const loginUser = ({ email, password }, redirectUrl) => {
       })
       .then(() => {
         window.location.href = redirectUrl;
+      })
+      .catch(err => dispatch(setError(err)));
+  };
+};
+
+export const userMovies = (payload) => {
+  return (dispatch) => {
+    axios
+      .post('/user-movies', payload)
+      .then((data) => {
+        dispatch(setFavorite(payload));
+        console.log(`Data ${data}`);
       })
       .catch(err => dispatch(setError(err)));
   };

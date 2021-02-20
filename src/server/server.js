@@ -101,7 +101,15 @@ const renderApp = async (req, res) => {
     });
 
     movieList = movieList.data.data;
-    movieUserList = movieUserList.data.data.filter((userMovie) => userMovie.userId === id);
+    movieUserList = movieUserList.data.data.filter(
+      (userMovie) => userMovie.userId === id
+    );
+
+    let myMovieList = movieList.filter((movie) => {
+      movieUserList.some((mu) => mu.movieId === movie._id);
+    });
+
+    let myMovieListUser = myMovieList;
 
     initialState = {
       user: {
@@ -109,7 +117,17 @@ const renderApp = async (req, res) => {
         name,
         id,
       },
-      myList: movieList.filter((movie) => movieUserList.some((mu) => mu.movieId === movie._id)),
+      myList: movieList
+        .filter((movie) => movieUserList.some((mu) => mu.movieId === movie._id))
+        .map((movie) => {
+          movie.userMovieId = movieUserList.find(
+            (mu) => mu.movieId === movie._id
+          )._id;
+          return movie;
+        }),
+      // myList: myMovieList.map((item) => {
+      //   item.push(movieUserList._id);
+      // }),
       trends: movieList.filter(
         (movie) => movie.contentRaiting === 'PG' && movie._id
       ),
@@ -211,7 +229,7 @@ app.post('/user-movies', async function (req, res, next) {
     // console.log(`movieId:  ${movieId}`);
 
     const { token } = req.cookies;
-    console.log(userMovie);
+    // console.log(userMovie);
 
     const { data, status } = await axios({
       url: `${process.env.API_URL}/api/user-movies`,
@@ -225,6 +243,29 @@ app.post('/user-movies', async function (req, res, next) {
     }
 
     res.status(201).json(data);
+    console.log(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/user-movies/:userMovieId', async function (req, res, next) {
+  try {
+    const { userMovieId } = req.params;
+    const { token } = req.cookies;
+
+    const { data, status } = await axios({
+      url: `${process.env.API_URL}/api/user-movies/${userMovieId}`,
+      headers: { Authorization: `Bearer ${token}` },
+      method: 'delete',
+    });
+
+    if (status !== 200) {
+      return next(boom.badImplementation());
+    }
+
+    res.status(200).json(data);
+    console.log(data);
   } catch (error) {
     next(error);
   }

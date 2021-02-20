@@ -75,8 +75,18 @@ export const userMovies = (payload) => {
     axios
       .post('/user-movies', payload)
       .then((data) => {
-        dispatch(setFavorite(payload));
-        console.log(`Data ${data}`);
+        dispatch(setFavorite({ ...payload, userMovieId: data.data.data }));
+      })
+      .catch(err => dispatch(setError(err)));
+  };
+};
+
+export const deleteMovie = (id, userMovieId) => {
+  return (dispatch) => {
+    axios
+      .delete(`/user-movies/${userMovieId}`)
+      .then((data) => {
+        dispatch(deleteFavorite(userMovieId));
       })
       .catch(err => dispatch(setError(err)));
   };
